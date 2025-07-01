@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+    <head>
+        <style>
+            body{
+                font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+            table, tr{
+                border: 1px solid black;
+                border-collapse: collapse;
+                padding: 3px;
+                text-align: center;
+            }
+            td{
+                color: black;
+                background-color: white;
+                border: 1px solid black;
+                padding: 3px;
+                text-align: center;
+            }
+            th{
+                background-color: white;
+                color: black;
+                border: 1px solid black;
+                padding: 3px;
+                text-align: center;
+            }
+            .highlight{
+                background-color: black;
+                color: white;
+                border: 1px solid white;
+                border-collapse: collapse;
+                padding: 3px;
+            }
+        </style>
+
+    </head>
+    <body>
+        <table id ="Ctable">
+            <tr>
+                <th> Estados:</th>
+                <th> Abreviação:</th>
+                <th> Número de Casos:</th>
+                <th> Número de Supeitos:</th>
+                <th> Número de Falecimentos:</th>
+            </tr>
+        </table>
+
+        <h3 id="mediaCa"></h3>
+        <h3 id="mediaSu"></h3>
+        <h3 id="mediaMor"></h3>
+        <h3 id="relacaoBig"></h3>
+        <h3 id="relacaoSmol"></h3>
+        <script>
+            console.log("carregou")
+            fetch('https://covid19-brazil-api.vercel.app/api/report/v1')
+            .then(response => response.json())
+            .then(data =>{
+                const estados = data.data;
+                //console.log(estados);
+                const table = document.getElementById("Ctable")
+                
+                estados.sort((a,b) => a.state.localeCompare(b.state));
+                const casos = estados.reduce((soma, estado) => {
+                    return soma + estado.cases;
+                }, 0);
+                const mediaC = casos / estados.length;
+                //console.log("Total de casos:", casos);
+                //console.log("Média de casos:", mediaC.toFixed(2)); 
+
+                const suspeitos = estados.reduce((soma, estado) => {
+                    return soma + estado.suspects;
+                }, 0);
+                const mediaS = suspeitos / estados.length;
+                 
+                const mortes = estados.reduce((soma, estado) => {
+                    return soma + estado.deaths;
+                }, 0);
+                const mediaM = mortes / estados.length;
+
+                let BigRel = 0;
+                let Statebigrel = '';
+
+                let SmolRel = Infinity;
+                let Statesmolrel = '';
+
+                estados.forEach(estado => {
+                    const linha = table.insertRow();
+
+                    const celulaEstado = linha.insertCell();
+                    celulaEstado.innerHTML = estado.state;
+
+                    const celulaAbv = linha.insertCell();
+                    celulaAbv.innerHTML = estado.uf;
+
+                    const celulaNC = linha.insertCell();
+                    celulaNC.innerHTML = estado.cases;
+                    
+                    const celulaNS = linha.insertCell();
+                    celulaNS.innerHTML = estado.suspect;
+
+                    const celulaM = linha.insertCell();
+                    celulaM.innerHTML = estado.deaths;
+
+
+                    if(estado.deaths > mediaM){
+                    [...linha.cells].forEach(celula => celula.classList.add('highlight'));
+                }
+                    const relacao = estado.cases / estado.deaths;
+
+                    if(relacao > BigRel){
+                        BigRel = relacao;
+                        Statebigrel = estado.state;
+                    }
+                    document.getElementById('relacaoBig').innerHTML = `O estado com a maior realção de Mortes/Casos é: ${Statebigrel} (${BigRel.toFixed(2)})`;
+                    
+                    if(relacao < SmolRel){
+                        SmolRel = relacao;
+                        Statesmolrel = estado.state;
+                    }
+                    document.getElementById('relacaoSmol').innerHTML = `O estado com a menor relação de Mortes/Casos é: ${Statesmolrel} (${SmolRel.toFixed(2)})`;
+                });
+                
+                
+
+                document.getElementById('mediaCa').innerHTML = `Média de Casos de Covid no Brasil: ${mediaC.toFixed(2)}`
+                document.getElementById('mediaSu').innerHTML = `Média de Suspeitos de Covid no Brasil: ${mediaS.toFixed(2)}`
+                document.getElementById('mediaMor').innerHTML = `Média de Mortes por conta de Covid no Brasil: ${mediaM.toFixed(2)}`
+
+            })
+            .catch(error => console.error('Erro:', error))
+        </script>
+    </body>
+</html>
